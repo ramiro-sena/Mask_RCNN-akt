@@ -41,16 +41,16 @@ class CustomConfig(Config):
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
     GPU_COUNT = 1
-    IMAGES_PER_GPU = 2
+    IMAGES_PER_GPU = 1
 
-    IMAGE_MIN_DIM = 540
-    IMAGE_MAX_DIM = 640
+    IMAGE_MIN_DIM = 340
+    IMAGE_MAX_DIM = 1024
     VALIDATION_STEPS = 10
     # Number of classes (including background)
     NUM_CLASSES = 1 + 2  # Background + car and truck
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 500
+    STEPS_PER_EPOCH = 50
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -169,11 +169,11 @@ if __name__ == '__main__':
 
 
     dataset_train = CustomDataset()
-    dataset_train.load_data('./Dataset/train/_annotations.coco.json', './Dataset/train/images')
+    dataset_train.load_data('./datasets/train/_annotations.coco.json', './datasets/train/')
     dataset_train.prepare()
 
     dataset_val = CustomDataset()
-    dataset_val.load_data('./Dataset/val/_annotations.coco.json', './Dataset/val/images')
+    dataset_val.load_data('./datasets/val/_annotations.coco.json', './datasets/val/')
     dataset_val.prepare()
 
     dataset = dataset_train
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     model = modellib.MaskRCNN(mode="training", config=config,
                             model_dir=MODEL_DIR)
 
-    init_with = "last"  # imagenet, coco, or last
+    init_with = "coco"  # imagenet, coco, or last
 
     if init_with == "imagenet":
         model.load_weights(model.get_imagenet_weights(), by_name=True)
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     start_train = time.time()
     model.train(dataset_train, dataset_val, 
                 learning_rate=config.LEARNING_RATE, 
-                epochs=80, 
+                epochs=30, 
                 layers='all')
     end_train = time.time()
     minutes = round((end_train - start_train) / 60, 2)
