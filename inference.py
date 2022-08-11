@@ -41,18 +41,66 @@ for filename in os.listdir(real_test_dir):
         print(filename)
 
 
+
+def get_masked_image(image, result):
+    """
+    Applies masks from the results to the given image
+    
+    """
+
+    boxes = result['rois']
+    masks = result['masks']
+    
+    N = boxes.shape[0]
+    if not N:
+        print("\n*** No instances to display *** \n")
+
+    colors = visualize.random_colors(N)
+    masked_image = image.astype(np.uint32).copy()
+    #print(colors)
+    for i in range(N):
+        color = colors[i]
+        color = (0.0,1.0,1.0)
+        # Mask
+        mask = masks[:, :, i]
+        
+        bypass = False
+        for value in boxes[i]:
+            if value == 0 or result['class_ids'][i] != 1:
+                bypass = True
+        if not bypass:
+            masked_image = visualize.apply_mask(masked_image, mask, color)
+            
+    return masked_image.astype(np.uint8)
+
+
 for image_path in image_paths:
+    
+
     img = skimage.io.imread(image_path)
     img_arr = np.array(img)
-    results = model.detect([img_arr], verbose=1)
-    r = results[0]
+    results = model.detect([img_arr], verbose=0)
+    print(results[0]['rois'])
+    #r = results[0]
+
+    for i, r in enumerate(results[0]):
+        #seg_map = combine_masks(frame, r)
+        #seg_image = label_to_color_image(seg_map)
+        #frame = merge_images(seg_image, frame)
+        frame = get_masked_image(img_arr, results[0])
+
 
     # image = cv2.imread(image_path)
     
-    # for roi in r['rois']:
-    #     cv2.rectangle(image, (roi[3], roi[2]), (roi[1], roi[0]), (255,0,0), 1 )
-    # cv2.imshow('img', image)
-    # cv2.waitKey(0)
+    for i, roi in enumerate(results[0]['rois']):
+        if results[0]['class_ids'][i] == 1:
+            cv2.rectangle(frame, (roi[3], roi[2]), (roi[1], roi[0]), (255,255,255), 2 )
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    cv2.imshow('img', frame)
+    cv2.waitKey(0)
 
-    visualize.display_instances(img, r['rois'], r['masks'], r['class_ids'], 
-                                ['BG', 'Lens', 'Rim'], r['scores'], figsize=(13,13))
+    # visualize.display_instances(img, r['rois'], r['masks'], r['class_ids'], 
+    #                             ['BG', 'Lens', 'Rim'], r['scores'], figsize=(13,13))
+
+
+
